@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alex is leaving</title>
+    <title>Alex is Leaving</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
         /* --- VISUAL SETUP --- */
@@ -84,7 +84,6 @@
             transition: color 0.1s, text-shadow 0.1s;
         }
         
-        /* This class is toggled by JS to make the separators pulse with the sound */
         .separator.pulse {
             color: #fff;
             text-shadow: 0 0 25px rgba(255, 255, 255, 0.9);
@@ -183,48 +182,36 @@
     </div>
 
     <div class="controls">
-        <button id="soundToggle" class="sound-btn">Enable Sound</button>
+        <button id="soundToggle" class="sound-btn">Start Ambience</button>
     </div>
 
-    <audio id="tickAudio" src="./tick.mp3" preload="auto"></audio>
+    <audio id="bgAudio" src="./recording-2026-02-07-10-29-43.mp3" loop></audio>
 
     <script>
-        const audioEl = document.getElementById('tickAudio');
+        const audioEl = document.getElementById('bgAudio');
         const soundBtn = document.getElementById('soundToggle');
         const separators = document.querySelectorAll('.separator');
-        let isMuted = true;
+        let isPlaying = false;
 
-        // --- AUDIO HANDLER ---
-        function playTick() {
-            if (isMuted) return;
-
-            // Visual Pulse: Add class then remove it quickly
-            separators.forEach(sep => sep.classList.add('pulse'));
-            setTimeout(() => {
-                separators.forEach(sep => sep.classList.remove('pulse'));
-            }, 150);
-
-            // Audio Playback
-            audioEl.currentTime = 0; // Rewind to start immediately
-            const playPromise = audioEl.play();
-            if (playPromise !== undefined) {
-                playPromise.catch(error => console.log("Waiting for interaction..."));
-            }
-        }
-
+        // --- BUTTON HANDLER ---
         soundBtn.addEventListener('click', function() {
-            isMuted = !isMuted;
-            if (!isMuted) {
-                this.innerText = "Mute Sound";
-                this.classList.add('active');
-                playTick(); // Test play
+            if (!isPlaying) {
+                // User wants to play
+                audioEl.play().then(() => {
+                    isPlaying = true;
+                    this.innerText = "Stop Ambience";
+                    this.classList.add('active');
+                }).catch(err => console.log("Audio Error:", err));
             } else {
-                this.innerText = "Enable Sound";
+                // User wants to pause
+                audioEl.pause();
+                isPlaying = false;
+                this.innerText = "Start Ambience";
                 this.classList.remove('active');
             }
         });
 
-        // --- SYNCED TIMER LOGIC ---
+        // --- TIMER LOGIC ---
         const targetDate = new Date("March 2, 2026 16:00:00 GMT+0800");
 
         function updateDisplay() {
@@ -233,7 +220,13 @@
 
             if (diff <= 0) return;
 
-            // Calendar Months Logic
+            // Visual Pulse Effect (Independent of audio)
+            separators.forEach(sep => sep.classList.add('pulse'));
+            setTimeout(() => {
+                separators.forEach(sep => sep.classList.remove('pulse'));
+            }, 150);
+
+            // Calendar Math
             let tempDate = new Date(now);
             let months = 0;
             while(true) {
@@ -255,29 +248,20 @@
             document.getElementById("hours").innerText = hours.toString().padStart(2, '0');
             document.getElementById("minutes").innerText = minutes.toString().padStart(2, '0');
             document.getElementById("seconds").innerText = seconds.toString().padStart(2, '0');
-
-            playTick();
         }
 
-        // --- PRECISION SYNC ENGINE ---
-        // This calculates the milliseconds until the next full second 
-        // to ensure the tick happens EXACTLY on the clock change.
+        // Precision Sync to ensure the visual tick happens on the second
         function startPrecisionTimer() {
             const now = new Date();
             const msUntilNextSecond = 1000 - now.getMilliseconds();
 
-            // First run: Wait for the exact second turnover
             setTimeout(() => {
                 updateDisplay();
-                // Then run exactly every 1000ms
                 setInterval(updateDisplay, 1000);
             }, msUntilNextSecond);
         }
 
-        // Initial paint (so it's not empty while waiting for the sync)
         updateDisplay();
-        
-        // Start the sync engine
         startPrecisionTimer();
 
     </script>
